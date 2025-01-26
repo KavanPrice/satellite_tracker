@@ -22,8 +22,10 @@ defmodule SatelliteTracker.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:req, ">= 0.4.0"},
-      {:finch, "~> 0.16"}
+      {:req, "~> 0.4.14"},
+      {:finch, "~> 0.19.0"},
+      {:castore, "~> 1.0.11"},
+      {:jason, "~> 1.4.4"}
     ]
   end
 end

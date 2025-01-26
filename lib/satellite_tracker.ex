@@ -32,7 +32,9 @@ defmodule SatelliteTracker do
   @spec get_satellite_summaries() :: {:ok, [Satellite.summary_t()]} | {:error, any}
   def get_satellite_summaries() do
     try do
-      case Req.get("https://api.wheretheiss.at/v1/satellites", finch: SatelliteTracker.Finch) do
+      case Req.get(System.get_env("SATELLITE_BASE_URL") <> "/v1/satellites",
+             finch: SatelliteTracker.Finch
+           ) do
         {:ok, response} ->
           {:ok, Satellite.from_summary_list(response.body)}
 
@@ -49,7 +51,9 @@ defmodule SatelliteTracker do
     satellite_id = satellite_summary.id |> Integer.to_string()
 
     try do
-      case Req.get("https://api.wheretheiss.at/v1/satellites/" <> satellite_id,
+      case Req.get(
+             (System.get_env("SATELLITE_BASE_URL") |> to_string) <>
+               "/v1/satellites/" <> satellite_id,
              finch: SatelliteTracker.Finch
            ) do
         {:ok, response} ->
