@@ -1,7 +1,7 @@
 import Config
 
 config :logger,
-  level: :debug,
+  level: :info,
   handle_otp_reports: true,
   handle_sasl_reports: true
 
@@ -11,7 +11,7 @@ config :logger, :console,
 
 if config_env() == :prod do
   config :logger,
-    level: :debug,
+    level: :alert,
     backends: [:console],
     compile_time_purge_matching: [
       [level_lower_than: :info]
