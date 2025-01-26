@@ -1,6 +1,26 @@
 version: "3"
 
 services:
+  influxdb:
+    build: ./influxdb
+    container_name: influxdb2
+    ports:
+      - "8086:8086"
+    env_file:
+      - .env
+    environment:
+      - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    networks:
+      - satellite-tracker-network
+    restart: unless-stopped
+
   data-pipeline:
     build: .
     container_name: data-pipeline
