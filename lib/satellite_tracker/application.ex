@@ -5,11 +5,13 @@ defmodule SatelliteTracker.Application do
     children = [
       {Finch, name: SatelliteTracker.Finch},
       SatelliteTracker.Connection,
-      {SatelliteTracker.Fetcher,
+      {SatelliteTracker.SummaryFetcher,
        [
          interval: 1000,
          base_url: System.get_env("SATELLITE_BASE_URL") |> to_string()
        ]},
+      {SatelliteTracker.DetailsFetcher,
+       [base_url: System.get_env("SATELLITE_BASE_URL") |> to_string()]},
       SatelliteTracker.Writer
     ]
 
