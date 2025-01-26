@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  data-pipeline:
+    build: .
+    container_name: data-pipeline
+    env_file: .env
+    environment:
+      - SATELLITE_BASE_URL=${SATELLITE_BASE_URL}
+    networks:
+      - satellite-tracker-network
+    restart: unless-stopped
+
+volumes:
+  influxdb-data:
+  influxdb-config:
+
+networks:
+  satellite-tracker-network:
+    driver: bridge
