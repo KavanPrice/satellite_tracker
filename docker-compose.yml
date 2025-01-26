@@ -2,7 +2,7 @@ version: "3"
 
 services:
   influxdb:
-    build: ./influxdb
+    image: influxdb:2.7
     container_name: influxdb2
     ports:
       - "8086:8086"
@@ -15,8 +15,8 @@ services:
       - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
     volumes:
-      - influxdb-data:/var/lib/influxdb2
-      - influxdb-config:/etc/influxdb2
+      - influxdb2-data:/var/lib/influxdb2
+      - influxdb2-config:/etc/influxdb2
     networks:
       - satellite-tracker-network
     restart: unless-stopped
@@ -27,6 +27,9 @@ services:
     env_file: .env
     environment:
       - SATELLITE_BASE_URL=${SATELLITE_BASE_URL}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
     networks:
       - satellite-tracker-network
     restart: unless-stopped
@@ -34,8 +37,10 @@ services:
       - influxdb
 
 volumes:
-  influxdb-data:
-  influxdb-config:
+  influxdb2-data:
+    name: influxdb2-data
+  influxdb2-config:
+    name: influxdb2-config
 
 networks:
   satellite-tracker-network:
