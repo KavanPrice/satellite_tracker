@@ -30,6 +30,8 @@ services:
     networks:
       - satellite-tracker-network
     restart: unless-stopped
+    depends_on:
+      - influxdb
 
 volumes:
   influxdb-data:

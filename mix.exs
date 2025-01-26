@@ -25,7 +25,9 @@ defmodule SatelliteTracker.MixProject do
       {:req, "~> 0.4.14"},
       {:finch, "~> 0.19.0"},
       {:castore, "~> 1.0.11"},
-      {:jason, "~> 1.4.4"}
+      {:jason, "~> 1.4.4"},
+      {:jsone, "~> 1.4.3"},
+      {:influxdb, "~> 0.2.1"}
     ]
   end
 end
