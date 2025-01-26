@@ -9,14 +9,34 @@ defmodule SatelliteTracker do
   def init(options) do
     Process.send_after(self(), :fetch, 0)
 
-    {:ok, %{interval: Keyword.get(options, :interval, 1000)}}
+    state = %{
+      interval: Keyword.get(options, :interval, 1000),
+      base_url: Keyword.fetch!(options, :base_url)
+    }
+
+    {:ok, state}
   end
 
   def handle_info(:fetch, state) do
-    case get_satellite_summaries() do
+    case get_satellite_summaries(state.base_url) do
       {:ok, satellites} ->
-        Enum.map(satellites, &get_satellite_details/1)
-        |> print_satellites()
+        Enum.map(
+          satellites,
+          fn satellite ->
+            case get_satellite_details(state.base_url, satellite) do
+              {:ok, satellite_details} ->
+                write_measurement(satellite_details)
+
+              {:error, {:http_request_failed, message}} ->
+                Logger.error("Failed to get satellite details: #{inspect(message)}")
+
+              {:error, {:unexpected_error, message}} ->
+                Logger.error(
+                  "Unexpected error trying to get satellite details: #{inspect(message)}"
+                )
+            end
+          end
+        )
 
         {:noreply, state}
 
@@ -29,10 +49,10 @@ defmodule SatelliteTracker do
     {:noreply, state}
   end
 
-  @spec get_satellite_summaries() :: {:ok, [Satellite.summary_t()]} | {:error, any}
-  def get_satellite_summaries() do
+  @spec get_satellite_summaries(String.t()) :: {:ok, [Satellite.summary_t()]} | {:error, any}
+  def get_satellite_summaries(base_url) do
     try do
-      case Req.get(System.get_env("SATELLITE_BASE_URL") <> "/v1/satellites",
+      case Req.get(base_url <> "/v1/satellites",
              finch: SatelliteTracker.Finch
            ) do
         {:ok, response} ->
@@ -46,13 +66,16 @@ defmodule SatelliteTracker do
     end
   end
 
-  @spec get_satellite_details(Satellite.summary_t()) :: {:ok, Satellite.details_t()}
-  def get_satellite_details(satellite_summary) do
+  @spec get_satellite_details(String.t(), Satellite.summary_t()) ::
+          {:ok, Satellite.details_t()}
+          | {:error, {:http_request_failed, any()}}
+          | {:error, {:unexpected_error, any()}}
+  def get_satellite_details(base_url, satellite_summary) do
     satellite_id = satellite_summary.id |> Integer.to_string()
 
     try do
       case Req.get(
-             (System.get_env("SATELLITE_BASE_URL") |> to_string) <>
+             base_url <>
                "/v1/satellites/" <> satellite_id,
              finch: SatelliteTracker.Finch
            ) do
@@ -67,11 +90,50 @@ defmodule SatelliteTracker do
     end
   end
 
-  defp print_satellites(satellite_list) do
-    Enum.map(satellite_list, &print_satellite/1)
-  end
+  @spec write_measurement(Satellite.details_t()) :: nil
+  def write_measurement(satellite_details) do
+    fields = %{
+      latitude: satellite_details.latitude,
+      longitude: satellite_details.longitude,
+      altitude: satellite_details.altitude,
+      velocity: satellite_details.velocity,
+      visibility: satellite_details.visibility,
+      footprint: satellite_details.footprint,
+      daynum: satellite_details.daynum,
+      solar_lat: satellite_details.solar_lat,
+      solar_lon: satellite_details.solar_lon
+    }
 
-  defp print_satellite(satellite) do
-    Logger.info("Satellite data: #{inspect(satellite)}")
+    tags = %{
+      id: satellite_details.id |> Integer.to_string(),
+      units: satellite_details.units |> MeasurementUnits.to_string()
+    }
+
+    point = %{
+      measurement: satellite_details.name,
+      tags: tags,
+      fields: fields,
+      timestamp: satellite_details.timestamp * 1_000_000_000
+    }
+
+    Logger.debug("Attempting to write data: #{inspect(point, pretty: true)}")
+
+    case SatelliteTracker.Connection.write(point) do
+      :ok ->
+        Logger.debug("Successfully wrote data to InfluxDB")
+        :ok
+
+      {:error, %{code: "unauthorized", message: message}} ->
+        Logger.error("InfluxDB authorization failed: #{message}")
+        {:error, :unauthorized}
+
+      {:error, error} ->
+        Logger.error("Failed to write to InfluxDB: #{inspect(error, pretty: true)}")
+        {:error, :write_failed}
+
+      unexpected ->
+        Logger.error("Unexpected response from InfluxDB: #{inspect(unexpected, pretty: true)}")
+        {:error, :unexpected_response}
+    end
   end
 end

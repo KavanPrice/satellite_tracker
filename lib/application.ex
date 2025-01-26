@@ -4,7 +4,12 @@ defmodule SatelliteTracker.Application do
   def start(_type, _args) do
     children = [
       {Finch, name: SatelliteTracker.Finch},
-      {SatelliteTracker, [interval: 1000]}
+      SatelliteTracker.Connection,
+      {SatelliteTracker,
+       [
+         interval: 1000,
+         base_url: System.get_env("SATELLITE_BASE_URL") |> to_string()
+       ]}
     ]
 
     opts = [strategy: :one_for_one, name: SatelliteTracker.Supervisor]

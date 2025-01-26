@@ -20,7 +20,7 @@ RUN mix release
 FROM debian:bookworm-slim
 
 RUN apt-get update -y && \
-    apt-get install -y openssl libncurses5 locales && \
+    apt-get install -y openssl libncurses5 locales ca-certificates && \
     apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 ENV LANG=C.UTF-8
