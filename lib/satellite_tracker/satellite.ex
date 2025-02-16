@@ -1,95 +1,79 @@
 defmodule Satellite do
-  @type summary_t :: %Satellite{
-          name: String.t(),
-          id: non_neg_integer()
+  @type t :: %__MODULE__{
+          info: Info.t(),
+          positions: [Position.t()]
         }
 
-  @type details_t :: %Satellite{
-          name: String.t(),
-          id: non_neg_integer(),
-          latitude: float(),
-          longitude: float(),
-          altitude: float(),
-          velocity: float(),
-          visibility: float(),
-          footprint: float(),
-          timestamp: float(),
-          daynum: float(),
-          solar_lat: float(),
-          solar_lon: float(),
-          units: MeasurementUnits.t()
-        }
   defstruct [
-    :name,
-    :id,
-    :latitude,
-    :longitude,
-    :altitude,
-    :velocity,
-    :visibility,
-    :footprint,
-    :timestamp,
-    :daynum,
-    :solar_lat,
-    :solar_lon,
-    :units
+    :info,
+    :positions
   ]
 
-  @spec from_summary(term()) :: summary_t()
-  def from_summary(summary) do
+  @spec from_response(term()) :: t()
+  def from_response(res) do
     %__MODULE__{
-      name: summary["name"],
-      id: summary["id"]
+      info: res["info"] |> Info.from_term(),
+      positions: Enum.map(res["positions"], &Position.from_term/1)
     }
-  end
-
-  @spec from_summary_list(term()) :: [summary_t()]
-  def from_summary_list(summary_list) do
-    Enum.map(summary_list, &__MODULE__.from_summary/1)
-  end
-
-  @spec from_details(term()) :: details_t()
-  def from_details(details) do
-    %__MODULE__{
-      name: details["name"],
-      id: details["id"],
-      latitude: details["latitude"],
-      longitude: details["longitude"],
-      altitude: details["altitude"],
-      velocity: details["velocity"],
-      visibility: details["visibility"],
-      footprint: details["footprint"],
-      timestamp: details["timestamp"],
-      daynum: details["daynum"],
-      solar_lat: details["solar_lat"],
-      solar_lon: details["solar_lon"],
-      units: details["units"] |> MeasurementUnits.from_string()
-    }
-  end
-
-  @spec from_details_list(term()) :: [details_t()]
-  def from_details_list(details_list) do
-    Enum.map(details_list, &__MODULE__.from_details/1)
   end
 end
 
-defmodule MeasurementUnits do
-  @type t :: :kilometers | :miles
+defmodule Info do
+  @type t :: %__MODULE__{
+          satname: String.t(),
+          satid: integer(),
+          transactionscount: integer()
+        }
 
-  @spec from_string(String.t()) :: t()
-  def from_string(unit_string) do
-    case String.downcase(unit_string) do
-      "kilometers" -> :kilometers
-      "miles" -> :miles
-      _ -> :kilometers
-    end
+  defstruct [:satname, :satid, :transactionscount]
+
+  @spec from_term(term()) :: t()
+  def from_term(term) do
+    %__MODULE__{
+      satname: term["satname"],
+      satid: term["satid"],
+      transactionscount: term["transactionscount"]
+    }
   end
+end
 
-  @spec to_string(t()) :: String.t()
-  def to_string(units) do
-    case units do
-      :kilometers -> "kilometers"
-      :miles -> "miles"
-    end
+defmodule Position do
+  @type t() :: %__MODULE__{
+          satlatitude: float(),
+          satlongitude: float(),
+          sataltitude: float(),
+          azimuth: float(),
+          elevation: float(),
+          ra: float(),
+          dec: float(),
+          timestamp: integer(),
+          eclipsed: bool()
+        }
+
+  defstruct [
+    :satlatitude,
+    :satlongitude,
+    :sataltitude,
+    :azimuth,
+    :elevation,
+    :ra,
+    :dec,
+    :timestamp,
+    :eclipsed
+  ]
+
+  @spec from_term(term()) :: t()
+  def from_term(term) do
+    %__MODULE__{
+      satlatitude: term["satlatitude"],
+      satlongitude: term["satlongitude"],
+      sataltitude: term["sataltitude"],
+      azimuth: term["azimuth"],
+      elevation: term["elevation"],
+      ra: term["ra"],
+      dec: term["dec"],
+      timestamp: term["timestamp"],
+      eclipsed: term["eclipsed"]
+    }
   end
 end
