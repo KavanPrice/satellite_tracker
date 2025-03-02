@@ -1,0 +1,21 @@
+app = 'satellite-tracker'
+primary_region = 'lhr'
+
+[build]
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+[[services]]
+  internal_port = 8086
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 8086
+    handlers = ["http"]
+
+[mounts]
+   source="influxdb_data"
+   destination="/var/lib/influxdb2"
